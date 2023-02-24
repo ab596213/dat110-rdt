@@ -20,6 +20,13 @@ public class RDT2DataBitErrors implements IChannelModel {
 			
 			segment.setChecksum((byte)(~(segment.getChecksum()))); 
 			
+			if (segment.getSeqnr()==1) {
+				segment.setSeqnr(0);
+			} else {
+				segment.setSeqnr(1);
+			}
+					
+			
 			System.out.println("[Network:" + name + "*   ] transmit: " + datagram.toString());
 
 		} else {

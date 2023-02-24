@@ -5,11 +5,12 @@ import java.util.concurrent.TimeUnit;
 
 import no.hvl.dat110.network.NetworkService;
 import no.hvl.dat110.transport.*;
+import no.hvl.dat110.transport.rdt21.SegmentRDT21;
 
 public class TransportSenderRDT2 extends TransportSender implements ITransportProtocolEntity {
 
 	public enum RDT2SenderStates {
-		WAITDATA, WAITACKNAK;
+		WAITDATA0, WAITDATA1, WAITACKNAK0, WAITACKNAK1;
 	}
 
 	private LinkedBlockingQueue<SegmentRDT2> recvqueue;
@@ -18,7 +19,7 @@ public class TransportSenderRDT2 extends TransportSender implements ITransportPr
 	public TransportSenderRDT2(NetworkService ns) {
 		super("TransportSender",ns);
 		recvqueue = new LinkedBlockingQueue<SegmentRDT2>();
-		state = RDT2SenderStates.WAITDATA;
+		state = RDT2SenderStates.WAITDATA0;
 	}
 
 	public void rdt_recv(Segment segment) {
@@ -41,15 +42,27 @@ public class TransportSenderRDT2 extends TransportSender implements ITransportPr
 
 		switch (state) {
 
-		case WAITDATA:
+		case WAITDATA0:
 
-			doWaitData();
+			doWaitData(0);
 
 			break;
 
-		case WAITACKNAK:
+		case WAITDATA1:
 
-			doWaitAckNak();
+			doWaitData(1);
+
+			break;
+
+		case WAITACKNAK0:
+
+			doWaitAckNak(0);
+
+			break;
+
+		case WAITACKNAK1:
+
+			doWaitAckNak(1);
 
 			break;
 
@@ -65,7 +78,7 @@ public class TransportSenderRDT2 extends TransportSender implements ITransportPr
 		state = newstate;
 	}
 	
-	private void doWaitData() {
+	private void doWaitData(int seqnr) {
 		
 		try {
 			
@@ -73,9 +86,14 @@ public class TransportSenderRDT2 extends TransportSender implements ITransportPr
 
 			if (data != null) { // something to send
 
-				udt_send(new SegmentRDT2(data));
-
-				changeState(RDT2SenderStates.WAITACKNAK);
+				udt_send(new SegmentRDT2(data, seqnr));
+				
+				if (seqnr == 0) {
+					changeState(RDT2SenderStates.WAITACKNAK0);
+				} else {
+					changeState(RDT2SenderStates.WAITACKNAK1);
+				}
+				
 			}
 
 		} catch (InterruptedException ex) {
@@ -84,7 +102,7 @@ public class TransportSenderRDT2 extends TransportSender implements ITransportPr
 		}
 	}
 
-	private void doWaitAckNak() {
+	private void doWaitAckNak(int seqnr) {
 		
 		try {
 
@@ -93,16 +111,27 @@ public class TransportSenderRDT2 extends TransportSender implements ITransportPr
 			if (acksegment != null) {
 
 				SegmentType type = acksegment.getType();
+				
+				if (!acksegment.isCorrect()) {
+					
+					System.out.println("[Transport:Sender   ] BITERRORS");
+					udt_send(new SegmentRDT21(data, seqnr)); // retransmit
+					
+				} else if (type == SegmentType.NAK) {
 
-				if (type == SegmentType.ACK) {
-
-					System.out.println("[Transport:Sender   ] ACK ");
-					data = null;
-					changeState(RDT2SenderStates.WAITDATA);
+					System.out.println("[Transport:Sender   ] NAK ");
+					udt_send(new SegmentRDT2(data, seqnr));
 					
 				} else {
-					System.out.println("[Transport:Sender   ] NAK ");
-					udt_send(new SegmentRDT2(data));
+					System.out.println("[Transport:Sender   ] ACK ");
+					
+					if (seqnr == 0) {
+						changeState(RDT2SenderStates.WAITDATA1);
+					} else {
+						changeState(RDT2SenderStates.WAITDATA0);
+					}
+					
+					data = null;
 				}
 			}
 			

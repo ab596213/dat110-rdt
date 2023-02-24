@@ -6,15 +6,17 @@ public class SegmentRDT2 extends Segment {
 
 	protected SegmentType type;
 	protected byte checksum;
+	protected int seqnr;
 
 	public SegmentRDT2() {
 
 	}
 
-	public SegmentRDT2(byte[] data) {
+	public SegmentRDT2(byte[] data, int seqnr) {
 		super(data);
 		this.type = SegmentType.DATA;
 		this.checksum = calcChecksum();
+		this.seqnr = seqnr;
 	}
 
 	public SegmentRDT2(SegmentType type) {
@@ -34,6 +36,7 @@ public class SegmentRDT2 extends Segment {
 
 		segment.type = this.type;
 		segment.checksum = this.checksum;
+		segment.seqnr = this.seqnr;
 
 		return segment;
 	}
@@ -44,6 +47,15 @@ public class SegmentRDT2 extends Segment {
 	
 	public SegmentType getType() {
 		return type;
+	}
+	
+
+	public int getSeqnr() {
+		return seqnr;
+	}
+
+	public void setSeqnr(int seqnr) {
+		this.seqnr = seqnr;
 	}
 
 	@Override

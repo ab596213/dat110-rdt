@@ -12,7 +12,7 @@ public class SegmentRDT21 extends SegmentRDT2 {
 	}
 	
 	public SegmentRDT21(byte[] data, int seqnr) {
-		super(data);
+		super(data, seqnr);
 		this.seqnr = seqnr;
 	}
 	

@@ -2,6 +2,7 @@ package no.hvl.dat110.network.models;
 
 import no.hvl.dat110.network.Datagram;
 import no.hvl.dat110.network.IChannelModel;
+import no.hvl.dat110.transport.rdt2.SegmentRDT2;
 import no.hvl.dat110.transport.rdt21.SegmentRDT21;
 
 public class RDT2DataAckNakBitErrors implements IChannelModel {
@@ -16,7 +17,7 @@ public class RDT2DataAckNakBitErrors implements IChannelModel {
 		
 		if (Math.random() < CORRUPTPB) {
 			
-			SegmentRDT21 segment = (SegmentRDT21) datagram.getSegment();
+			SegmentRDT2 segment = (SegmentRDT2) datagram.getSegment();
 			
 			segment.setChecksum((byte)(~(segment.getChecksum()))); 
 						
